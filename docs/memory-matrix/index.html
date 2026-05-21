@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memory Matrix</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+}
+#screen {
+  position: relative;
+  width: 640px;
+  height: 480px;
+  background: #0a0a0a;
+  border: 3px solid #222;
+  border-radius: 12px;
+  box-shadow: 0 0 40px rgba(0,255,255,0.15), 0 0 80px rgba(0,255,255,0.05), inset 0 0 60px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+#screen::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.15) 2px,
+    rgba(0,0,0,0.15) 4px
+  );
+  pointer-events: none;
+  z-index: 100;
+}
+#screen::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.4) 100%);
+  pointer-events: none;
+  z-index: 101;
+}
+#hud {
+  position: absolute;
+  top: 12px; left: 16px; right: 16px;
+  display: flex;
+  justify-content: space-between;
+  color: #0ff;
+  font-size: 14px;
+  text-shadow: 0 0 8px #0ff;
+  z-index: 10;
+}
+#grid-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  gap: 6px;
+  z-index: 10;
+}
+.cell {
+  width: 60px;
+  height: 60px;
+  background: #1a1a2e;
+  border: 2px solid #333;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s, box-shadow 0.1s;
+}
+.cell:hover { border-color: #555; }
+.cell.revealed {
+  background: #0ff;
+  border-color: #0ff;
+  box-shadow: 0 0 15px #0ff, 0 0 30px rgba(0,255,255,0.3);
+}
+.cell.correct {
+  background: #0f0;
+  border-color: #0f0;
+  box-shadow: 0 0 15px #0f0, 0 0 30px rgba(0,255,0,0.3);
+}
+.cell.wrong {
+  background: #f00;
+  border-color: #f00;
+  box-shadow: 0 0 15px #f00, 0 0 30px rgba(255,0,0,0.3);
+}
+.cell.disabled { pointer-events: none; }
+#message {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #0ff;
+  font-size: 28px;
+  text-shadow: 0 0 20px #0ff;
+  z-index: 50;
+  text-align: center;
+  display: none;
+}
+#start-btn, #restart-btn {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 60px;
+  padding: 12px 32px;
+  background: transparent;
+  border: 2px solid #0ff;
+  color: #0ff;
+  font-family: 'Courier New', monospace;
+  font-size: 18px;
+  cursor: pointer;
+  text-shadow: 0 0 8px #0ff;
+  box-shadow: 0 0 10px rgba(0,255,255,0.3);
+  z-index: 50;
+  display: none;
+}
+#start-btn:hover, #restart-btn:hover {
+  background: rgba(0,255,255,0.1);
+}
+#lives-display { color: #f55; text-shadow: 0 0 8px #f55; }
+#title {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -70%);
+  color: #0ff;
+  font-size: 36px;
+  text-shadow: 0 0 30px #0ff, 0 0 60px rgba(0,255,255,0.3);
+  z-index: 50;
+  text-align: center;
+  letter-spacing: 4px;
+}
+#subtitle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, 0%);
+  color: #888;
+  font-size: 12px;
+  z-index: 50;
+  text-align: center;
+}
+</style>
+</head>
+<body>
+<div id="screen">
+  <div id="hud">
+    <span>LVL <span id="level">1</span></span>
+    <span>SCORE <span id="score">0</span></span>
+    <span id="lives-display">♥♥♥</span>
+    <span>HI <span id="hiscore">0</span></span>
+  </div>
+  <div id="grid-container"></div>
+  <div id="title">MEMORY MATRIX</div>
+  <div id="subtitle">test your memory</div>
+  <button id="start-btn">START</button>
+  <button id="restart-btn">RESTART</button>
+  <div id="message"></div>
+</div>
+
+<script>
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSound(freq, type, duration, vol = 0.3) {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+  gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+function sfxReveal() { playSound(800, 'square', 0.15, 0.15); }
+function sfxCorrect() { playSound(660, 'square', 0.12); playSound(880, 'square', 0.12); }
+function sfxWrong() { playSound(150, 'sawtooth', 0.3, 0.25); }
+function sfxLevelUp() {
+  [523, 659, 784, 1047].forEach((f, i) => {
+    setTimeout(() => playSound(f, 'square', 0.15, 0.2), i * 80);
+  });
+}
+function sfxGameOver() {
+  [400, 300, 200, 100].forEach((f, i) => {
+    setTimeout(() => playSound(f, 'sawtooth', 0.3, 0.2), i * 150);
+  });
+}
+
+const $ = id => document.getElementById(id);
+const gridEl = $('grid-container');
+const msgEl = $('message');
+const startBtn = $('start-btn');
+const restartBtn = $('restart-btn');
+const titleEl = $('title');
+const subtitleEl = $('subtitle');
+
+let level = 1;
+let score = 0;
+let lives = 3;
+let hiScore = parseInt(localStorage.getItem('memoryMatrixHi')) || 0;
+let pattern = [];
+let found = 0;
+let mistakes = 0;
+let roundStartTime = 0;
+let inputActive = false;
+
+$('hiscore').textContent = hiScore;
+startBtn.style.display = 'block';
+
+function getGridConfig(lvl) {
+  if (lvl <= 3) return { size: 3, lit: 2 + lvl };
+  if (lvl <= 7) return { size: 4, lit: Math.min(3 + lvl, 10) };
+  return { size: 5, lit: Math.min(4 + lvl, 16) };
+}
+
+function buildGrid(size) {
+  gridEl.innerHTML = '';
+  gridEl.style.gridTemplateColumns = `repeat(${size}, 60px)`;
+  const cells = [];
+  for (let i = 0; i < size * size; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.dataset.index = i;
+    cell.addEventListener('click', onCellClick);
+    gridEl.appendChild(cell);
+    cells.push(cell);
+  }
+  return cells;
+}
+
+function pickPattern(total, count) {
+  const indices = [];
+  while (indices.length < count) {
+    const r = Math.floor(Math.random() * total);
+    if (!indices.includes(r)) indices.push(r);
+  }
+  return indices;
+}
+
+function showMessage(text, duration) {
+  msgEl.textContent = text;
+  msgEl.style.display = 'block';
+  if (duration) setTimeout(() => { msgEl.style.display = 'none'; }, duration);
+}
+
+function updateHUD() {
+  $('level').textContent = level;
+  $('score').textContent = score;
+  $('lives-display').textContent = '♥'.repeat(lives) + '♡'.repeat(3 - lives);
+  if (score > hiScore) {
+    hiScore = score;
+    localStorage.setItem('memoryMatrixHi', hiScore);
+  }
+  $('hiscore').textContent = hiScore;
+}
+
+let cells = [];
+
+function startRound() {
+  inputActive = false;
+  found = 0;
+  mistakes = 0;
+  const config = getGridConfig(level);
+  cells = buildGrid(config.size);
+  pattern = pickPattern(config.size * config.size, config.lit);
+  updateHUD();
+
+  showMessage(`LEVEL ${level}`, 800);
+
+  setTimeout(() => {
+    msgEl.style.display = 'none';
+    pattern.forEach(i => {
+      cells[i].classList.add('revealed');
+    });
+    sfxReveal();
+
+    const revealTime = 1000 + Math.min(level * 50, 500);
+    setTimeout(() => {
+      cells.forEach(c => c.classList.remove('revealed'));
+      inputActive = true;
+      roundStartTime = Date.now();
+    }, revealTime);
+  }, 900);
+}
+
+function onCellClick(e) {
+  if (!inputActive) return;
+  const cell = e.target;
+  if (cell.classList.contains('correct') || cell.classList.contains('wrong')) return;
+
+  const idx = parseInt(cell.dataset.index);
+
+  if (pattern.includes(idx)) {
+    cell.classList.add('correct', 'disabled');
+    sfxCorrect();
+    found++;
+    const elapsed = (Date.now() - roundStartTime) / 1000;
+    const speedBonus = Math.max(0, Math.floor(50 - elapsed * 3));
+    score += 10 + speedBonus;
+    updateHUD();
+
+    if (found === pattern.length) {
+      inputActive = false;
+      sfxLevelUp();
+      level++;
+      showMessage('PERFECT!', 1000);
+      setTimeout(startRound, 1200);
+    }
+  } else {
+    cell.classList.add('wrong', 'disabled');
+    sfxWrong();
+    lives--;
+    updateHUD();
+
+    if (lives <= 0) {
+      inputActive = false;
+      sfxGameOver();
+      pattern.forEach(i => {
+        if (!cells[i].classList.contains('correct')) {
+          cells[i].classList.add('revealed');
+        }
+      });
+      showMessage('GAME OVER', 0);
+      restartBtn.style.display = 'block';
+    }
+  }
+}
+
+startBtn.addEventListener('click', () => {
+  audioCtx.resume();
+  startBtn.style.display = 'none';
+  titleEl.style.display = 'none';
+  subtitleEl.style.display = 'none';
+  level = 1;
+  score = 0;
+  lives = 3;
+  startRound();
+});
+
+restartBtn.addEventListener('click', () => {
+  restartBtn.style.display = 'none';
+  msgEl.style.display = 'none';
+  level = 1;
+  score = 0;
+  lives = 3;
+  startRound();
+});
+</script>
+</body>
+</html>

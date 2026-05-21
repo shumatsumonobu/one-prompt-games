@@ -1,0 +1,23 @@
+{
+  "name": "one-prompt-games",
+  "version": "1.0.0",
+  "description": "> 1 prompt. 1 game. no second chances.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "github_shumatsumonobu:shumatsumonobu/one-prompt-games.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "commander": "^14.0.3",
+    "playwright": "^1.60.0",
+    "sharp": "^0.34.5",
+    "sharp-gif2": "^0.1.3"
+  }
+}

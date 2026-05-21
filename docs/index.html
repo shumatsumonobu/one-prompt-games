@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ONE PROMPT GAMES</title>
+<meta name="description" content="Browser games, each built from a single AI prompt. No edits. No follow-ups. Play them all right here.">
+<meta property="og:title" content="ONE PROMPT GAMES">
+<meta property="og:description" content="Browser games, each built from a single AI prompt. No edits. No follow-ups. Play them all right here.">
+<meta property="og:image" content="https://shumatsumonobu.github.io/one-prompt-games/og-image.png">
+<meta property="og:url" content="https://shumatsumonobu.github.io/one-prompt-games/">
+<meta property="og:type" content="website">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ONE PROMPT GAMES">
+<meta name="twitter:description" content="Browser games, each built from a single AI prompt. No edits. No follow-ups. Play them all right here.">
+<meta name="twitter:image" content="https://shumatsumonobu.github.io/one-prompt-games/og-image.png">
+<meta name="twitter:site" content="@shumatsumonobu">
+<meta name="twitter:creator" content="@shumatsumonobu">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0a;
+    color: #e0e0e0;
+    font-family: 'Courier New', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 255, 255, 0.015) 2px,
+      rgba(0, 255, 255, 0.015) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+  header {
+    text-align: center;
+    padding: 3rem 1rem 0.5rem;
+  }
+  header h1 {
+    font-size: 2.5rem;
+    color: #0ff;
+    text-shadow: 0 0 10px #0ff, 0 0 30px #0ff, 0 0 60px #0ff;
+    letter-spacing: 0.3em;
+  }
+  header p {
+    color: #888;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+  }
+  .stats {
+    text-align: center;
+    padding: 1rem;
+    font-size: 1.1rem;
+    color: #0ff;
+    text-shadow: 0 0 5px #0ff;
+    letter-spacing: 0.15em;
+  }
+  .concept {
+    text-align: center;
+    max-width: 600px;
+    padding: 0 1rem 1rem;
+    color: #666;
+    font-size: 0.85rem;
+    line-height: 1.6;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.5rem;
+    padding: 2rem;
+    max-width: 1100px;
+    width: 100%;
+  }
+  .card {
+    background: #111;
+    border: 1px solid #222;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+  }
+  .card:hover {
+    border-color: #0ff;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.2), 0 0 40px rgba(0, 255, 255, 0.1);
+    transform: translateY(-4px);
+  }
+  .card img {
+    width: 100%;
+    display: block;
+    aspect-ratio: 4/3;
+    object-fit: cover;
+    background: #000;
+  }
+  .card .info {
+    padding: 1rem;
+  }
+  .card h2 {
+    font-size: 1.1rem;
+    color: #0ff;
+    text-shadow: 0 0 5px #0ff;
+    margin-bottom: 0.3rem;
+  }
+  .card .desc {
+    font-size: 0.8rem;
+    color: #888;
+    line-height: 1.4;
+  }
+  footer {
+    text-align: center;
+    padding: 2rem 1rem 3rem;
+    color: #555;
+    font-size: 0.8rem;
+  }
+  .concept a { color: #0ff; text-decoration: none; }
+  .concept a:hover { text-decoration: underline; }
+  footer a { color: #0ff; text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+  footer .links { margin-top: 0.5rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>ONE PROMPT GAMES</h1>
+  <p>1 prompt. 1 game. no second chances.</p>
+</header>
+<div class="stats">NO EDITS. 1 PROMPT EACH.</div>
+<p class="concept">every game was built from a single prompt fed to <a href="https://claude.ai/code">Claude Code</a>. no edits. no follow-ups. whatever comes out ships as-is. click any game to play instantly.</p>
+<div class="grid">
+  <a class="card" href="space-shooter/">
+    <img src="space-shooter/preview.gif" alt="space-shooter">
+    <div class="info">
+      <h2>space-shooter</h2>
+      <p class="desc">blast through waves of enemies in neon space. survive the boss. chase the high score.</p>
+    </div>
+  </a>
+  <a class="card" href="breakout/">
+    <img src="breakout/preview.gif" alt="breakout">
+    <div class="info">
+      <h2>breakout</h2>
+      <p class="desc">smash neon bricks with a glowing paddle. catch power-ups. clear all 3 levels.</p>
+    </div>
+  </a>
+  <a class="card" href="snake/">
+    <img src="snake/preview.gif" alt="snake">
+    <div class="info">
+      <h2>snake</h2>
+      <p class="desc">eat, grow, don't hit yourself. classic snake with bonus food and speed levels.</p>
+    </div>
+  </a>
+  <a class="card" href="asteroid-dodge/">
+    <img src="asteroid-dodge/preview.gif" alt="asteroid-dodge">
+    <div class="info">
+      <h2>asteroid-dodge</h2>
+      <p class="desc">no weapons. just reflexes. dodge falling asteroids as long as you can.</p>
+    </div>
+  </a>
+  <a class="card" href="memory-matrix/">
+    <img src="memory-matrix/preview.gif" alt="memory-matrix">
+    <div class="info">
+      <h2>memory-matrix</h2>
+      <p class="desc">watch the pattern. tap from memory. grids get bigger. your confidence doesn't.</p>
+    </div>
+  </a>
+  <a class="card" href="rhythm-tap/">
+    <img src="rhythm-tap/preview.gif" alt="rhythm-tap">
+    <div class="info">
+      <h2>rhythm-tap</h2>
+      <p class="desc">notes fall. arrows flash. hit the beat or lose it all.</p>
+    </div>
+  </a>
+  <a class="card" href="tetris/">
+    <img src="tetris/preview.gif" alt="tetris">
+    <div class="info">
+      <h2>tetris</h2>
+      <p class="desc">stack blocks. clear lines. lose a life when you top out. classic falling-piece puzzle.</p>
+    </div>
+  </a>
+  <a class="card" href="platformer/">
+    <img src="platformer/preview.gif" alt="platformer">
+    <div class="info">
+      <h2>platformer</h2>
+      <p class="desc">run, jump, stomp. neon city scrolls by as you chase coins and dodge enemies.</p>
+    </div>
+  </a>
+</div>
+<footer>
+  built with <a href="https://claude.ai/code">Claude Code</a>
+  <div class="links">
+    <a href="https://github.com/shumatsumonobu/one-prompt-games">GitHub</a> / <a href="https://x.com/shumatsumonobu">X</a>
+  </div>
+</footer>
+</body>
+</html>

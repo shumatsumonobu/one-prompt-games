@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NEON RUNNER</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;display:flex;justify-content:center;align-items:center;height:100vh;overflow:hidden}
+canvas{image-rendering:pixelated;box-shadow:0 0 40px rgba(0,255,255,.3),0 0 80px rgba(0,255,255,.15),inset 0 0 40px rgba(0,255,255,.05);border-radius:8px}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const canvas=document.getElementById('c');
+const ctx=canvas.getContext('2d');
+const W=640,H=480;
+canvas.width=W;canvas.height=H;
+
+// Audio
+const audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+function playSound(freq,type,dur,vol=.15,slide=0){
+  const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.type=type;o.frequency.setValueAtTime(freq,audioCtx.currentTime);
+  if(slide)o.frequency.linearRampToValueAtTime(freq+slide,audioCtx.currentTime+dur);
+  g.gain.setValueAtTime(vol,audioCtx.currentTime);
+  g.gain.linearRampToValueAtTime(0,audioCtx.currentTime+dur);
+  o.connect(g);g.connect(audioCtx.destination);
+  o.start();o.stop(audioCtx.currentTime+dur);
+}
+function sfxJump(){playSound(300,'square',.15,.12,400)}
+function sfxCoin(){playSound(800,'square',.08,.1);setTimeout(()=>playSound(1200,'square',.08,.1),80)}
+function sfxStomp(){playSound(200,'sawtooth',.2,.15,-150)}
+function sfxHurt(){playSound(150,'sawtooth',.3,.15);setTimeout(()=>playSound(100,'square',.3,.12),100)}
+function sfxDeath(){playSound(400,'sawtooth',.5,.2,-350)}
+
+// State
+let state='title'; // title, playing, gameover
+let score,lives,highScore=parseInt(localStorage.getItem('neonRunnerHigh'))||0;
+let camera={x:0};
+let player,platforms,enemies,coins,particles;
+let speedMult,distanceTraveled;
+let keys={};
+
+document.addEventListener('keydown',e=>{
+  keys[e.code]=true;
+  if(e.code==='Enter'){
+    if(state==='title'||state==='gameover'){startGame();e.preventDefault()}
+  }
+  if(e.code==='Space')e.preventDefault();
+});
+document.addEventListener('keyup',e=>{keys[e.code]=false});
+
+// Parallax buildings
+let buildings=[];
+function genBuildings(){
+  buildings=[];
+  for(let i=0;i<80;i++){
+    buildings.push({
+      x:i*60+Math.random()*30,
+      w:30+Math.random()*40,
+      h:60+Math.random()*120,
+      layer:Math.random()<.5?0:1
+    });
+  }
+}
+genBuildings();
+
+// Platform generation
+const PLAT_MIN_W=80,PLAT_MAX_W=200;
+const GROUND_Y=H-40;
+const GRAVITY=0.55;
+const JUMP_FORCE=-11;
+const MAX_JUMP_DIST=160;
+const PLAYER_W=20,PLAYER_H=28;
+
+function startGame(){
+  state='playing';
+  score=0;lives=3;speedMult=1;distanceTraveled=0;
+  player={x:100,y:GROUND_Y-PLAYER_H,vx:0,vy:0,onGround:false,facing:1,jumpHeld:false};
+  camera={x:0};
+  platforms=[];enemies=[];coins=[];particles=[];
+  generateInitialPlatforms();
+  if(audioCtx.state==='suspended')audioCtx.resume();
+}
+
+function generateInitialPlatforms(){
+  // Ground
+  platforms.push({x:-200,y:GROUND_Y,w:600,h:40,type:'ground'});
+  let lastX=400,lastY=GROUND_Y;
+  for(let i=0;i<30;i++){
+    let r=genNextPlatform(lastX,lastY);
+    platforms.push(r.plat);
+    lastX=r.plat.x+r.plat.w;
+    lastY=r.plat.y;
+    if(Math.random()<.5)spawnEnemy(r.plat);
+    spawnCoins(r.plat);
+  }
+}
+
+function genNextPlatform(lastX,lastY){
+  let gap=40+Math.random()*60;
+  if(gap>MAX_JUMP_DIST-20)gap=MAX_JUMP_DIST-20;
+  let pw=PLAT_MIN_W+Math.random()*(PLAT_MAX_W-PLAT_MIN_W);
+  let py=lastY+(-60+Math.random()*80);
+  if(py>GROUND_Y-10)py=GROUND_Y-10;
+  if(py<120)py=120;
+  if(Math.abs(py-lastY)>80)py=lastY+(py>lastY?60:-60);
+  let plat={x:lastX+gap,y:py,w:pw,h:16,type:'platform'};
+  return{plat};
+}
+
+function spawnEnemy(plat){
+  if(plat.w<80)return;
+  enemies.push({
+    x:plat.x+20+Math.random()*(plat.w-60),
+    y:plat.y-22,
+    w:20,h:22,
+    vx:(1+Math.random())*(.5),
+    platLeft:plat.x+4,
+    platRight:plat.x+plat.w-24,
+    alive:true
+  });
+}
+
+function spawnCoins(plat){
+  let n=Math.floor(Math.random()*4);
+  for(let i=0;i<n;i++){
+    coins.push({
+      x:plat.x+20+i*30,
+      y:plat.y-40-Math.random()*20,
+      r:8,
+      collected:false,
+      bobOffset:Math.random()*Math.PI*2
+    });
+  }
+}
+
+function extendWorld(){
+  let last=platforms[platforms.length-1];
+  let lastX=last.x+last.w;
+  let lastY=last.y;
+  let needed=camera.x+W+400;
+  while(lastX<needed){
+    let r=genNextPlatform(lastX,lastY);
+    platforms.push(r.plat);
+    lastX=r.plat.x+r.plat.w;
+    lastY=r.plat.y;
+    if(Math.random()<.45+distanceTraveled*0.00005)spawnEnemy(r.plat);
+    spawnCoins(r.plat);
+  }
+  // Cleanup old
+  platforms=platforms.filter(p=>p.x+p.w>camera.x-200);
+  enemies=enemies.filter(e=>e.x>camera.x-200);
+  coins=coins.filter(c=>c.x>camera.x-200);
+}
+
+// Particles
+function addParticles(x,y,color,count,spread=3){
+  for(let i=0;i<count;i++){
+    particles.push({
+      x,y,
+      vx:(Math.random()-.5)*spread*2,
+      vy:-Math.random()*spread-1,
+      life:20+Math.random()*20,
+      maxLife:40,
+      color,
+      size:2+Math.random()*3
+    });
+  }
+}
+
+function updateParticles(){
+  for(let p of particles){
+    p.x+=p.vx;p.y+=p.vy;p.vy+=.1;p.life--;
+  }
+  particles=particles.filter(p=>p.life>0);
+}
+
+function drawParticles(){
+  for(let p of particles){
+    let a=p.life/p.maxLife;
+    ctx.globalAlpha=a;
+    ctx.fillStyle=p.color;
+    ctx.fillRect(p.x-camera.x,p.y,p.size,p.size);
+  }
+  ctx.globalAlpha=1;
+}
+
+// Update
+function update(){
+  if(state!=='playing')return;
+
+  speedMult=1+distanceTraveled*0.00008;
+  let moveSpeed=3.2*speedMult;
+
+  // Player input
+  if(keys['ArrowLeft']||keys['KeyA']){player.vx=-moveSpeed;player.facing=-1}
+  else if(keys['ArrowRight']||keys['KeyD']){player.vx=moveSpeed;player.facing=1}
+  else{player.vx*=.7;if(Math.abs(player.vx)<.3)player.vx=0}
+
+  if((keys['Space']||keys['ArrowUp']||keys['KeyW'])&&player.onGround&&!player.jumpHeld){
+    player.vy=JUMP_FORCE;player.onGround=false;player.jumpHeld=true;
+    sfxJump();
+    addParticles(player.x+PLAYER_W/2,player.y+PLAYER_H,'#0ff',6,2);
+  }
+  if(!keys['Space']&&!keys['ArrowUp']&&!keys['KeyW'])player.jumpHeld=false;
+
+  // Variable jump height
+  if(!player.onGround&&player.vy<-3&&!keys['Space']&&!keys['ArrowUp']&&!keys['KeyW']){
+    player.vy*=.85;
+  }
+
+  player.vy+=GRAVITY;
+  player.x+=player.vx;
+  player.y+=player.vy;
+  player.onGround=false;
+
+  // Platform collision
+  for(let p of platforms){
+    if(player.x+PLAYER_W>p.x&&player.x<p.x+p.w){
+      // Landing on top
+      if(player.vy>=0&&player.y+PLAYER_H>p.y&&player.y+PLAYER_H<p.y+p.h+player.vy+2){
+        player.y=p.y-PLAYER_H;
+        player.vy=0;
+        player.onGround=true;
+      }
+    }
+  }
+
+  // Falling off screen
+  if(player.y>H+50){
+    loseLife();
+    return;
+  }
+
+  // Camera
+  let targetCamX=player.x-W*0.35;
+  camera.x+=(targetCamX-camera.x)*0.08;
+  if(camera.x<0)camera.x=0;
+
+  distanceTraveled=Math.max(distanceTraveled,player.x);
+
+  // Enemies
+  for(let e of enemies){
+    if(!e.alive)continue;
+    e.x+=e.vx*speedMult;
+    if(e.x<=e.platLeft||e.x+e.w>=e.platRight)e.vx*=-1;
+
+    // Collision with player
+    if(player.x+PLAYER_W>e.x+4&&player.x<e.x+e.w-4&&
+       player.y+PLAYER_H>e.y+4&&player.y<e.y+e.h){
+      if(player.vy>0&&player.y+PLAYER_H<e.y+e.h/2+8){
+        // Stomp
+        e.alive=false;
+        player.vy=JUMP_FORCE*.7;
+        score+=100;
+        sfxStomp();
+        addParticles(e.x+e.w/2,e.y+e.h,'#f0f',10,4);
+      } else {
+        // Hurt
+        loseLife();
+        return;
+      }
+    }
+  }
+
+  // Coins
+  let t=performance.now()/1000;
+  for(let c of coins){
+    if(c.collected)continue;
+    let cy=c.y+Math.sin(t*3+c.bobOffset)*5;
+    let dx=player.x+PLAYER_W/2-(c.x);
+    let dy=player.y+PLAYER_H/2-cy;
+    if(Math.sqrt(dx*dx+dy*dy)<c.r+12){
+      c.collected=true;
+      score+=50;
+      sfxCoin();
+      addParticles(c.x,cy,'#ff0',8,3);
+    }
+  }
+
+  updateParticles();
+  extendWorld();
+
+  // Score from distance
+  score=Math.max(score,Math.floor(distanceTraveled/10));
+}
+
+function loseLife(){
+  lives--;
+  sfxHurt();
+  addParticles(player.x+PLAYER_W/2,player.y+PLAYER_H/2,'#f00',15,5);
+  if(lives<=0){
+    state='gameover';
+    sfxDeath();
+    if(score>highScore){highScore=score;localStorage.setItem('neonRunnerHigh',highScore)}
+    return;
+  }
+  // Respawn
+  let safeX=camera.x+100;
+  let safeY=GROUND_Y-PLAYER_H;
+  for(let p of platforms){
+    if(p.x<=safeX&&p.x+p.w>=safeX){
+      safeY=p.y-PLAYER_H;
+      break;
+    }
+  }
+  player.x=safeX;player.y=safeY;player.vx=0;player.vy=0;player.onGround=false;
+}
+
+// Draw
+function draw(){
+  ctx.fillStyle='#0a0a12';
+  ctx.fillRect(0,0,W,H);
+
+  if(state==='title'){drawTitle();drawScanlines();return}
+  if(state==='gameover'){drawGame();drawGameOver();drawScanlines();return}
+
+  drawGame();
+  drawHUD();
+  drawScanlines();
+}
+
+function drawParallax(){
+  // Stars
+  let seed=42;
+  function prand(){seed=(seed*16807+0)%2147483647;return(seed&0xffff)/0xffff}
+  seed=42;
+  ctx.fillStyle='rgba(255,255,255,0.3)';
+  for(let i=0;i<60;i++){
+    let sx=((prand()*W*3)-camera.x*0.05)%W;
+    if(sx<0)sx+=W;
+    let sy=prand()*H*0.6;
+    ctx.fillRect(sx,sy,1,1);
+  }
+
+  // Buildings far
+  for(let b of buildings){
+    let bx=b.x*3-camera.x*0.15;
+    if(bx>W+100||bx+b.w<-100)continue;
+    let alpha=b.layer===0?.08:.05;
+    let col=b.layer===0?'rgba(0,255,255,':'rgba(255,0,255,';
+    ctx.fillStyle=col+alpha+')';
+    ctx.fillRect(bx,H-b.h-40,b.w,b.h+40);
+    // Windows
+    ctx.fillStyle=col+(alpha*2)+')';
+    for(let wy=H-b.h-30;wy<H-50;wy+=12){
+      for(let wx=bx+4;wx<bx+b.w-4;wx+=10){
+        if(prand()>.5)ctx.fillRect(wx,wy,4,4);
+      }
+    }
+  }
+
+  // Ground line glow
+  ctx.fillStyle='rgba(255,0,255,0.1)';
+  ctx.fillRect(0,GROUND_Y,W,H-GROUND_Y);
+}
+
+function drawGame(){
+  drawParallax();
+
+  let t=performance.now()/1000;
+
+  // Platforms
+  for(let p of platforms){
+    let px=p.x-camera.x,py=p.y;
+    if(px>W+10||px+p.w<-10)continue;
+    // Glow
+    ctx.shadowColor='#f0f';ctx.shadowBlur=8;
+    ctx.fillStyle='#303';
+    ctx.fillRect(px,py,p.w,p.h);
+    ctx.shadowBlur=0;
+    // Top edge
+    ctx.fillStyle='#f0f';
+    ctx.fillRect(px,py,p.w,2);
+    // Grid lines
+    ctx.fillStyle='rgba(255,0,255,0.15)';
+    for(let gx=px;gx<px+p.w;gx+=16){ctx.fillRect(gx,py,1,p.h)}
+  }
+
+  // Coins
+  for(let c of coins){
+    if(c.collected)continue;
+    let cx=c.x-camera.x;
+    let cy=c.y+Math.sin(t*3+c.bobOffset)*5;
+    ctx.shadowColor='#ff0';ctx.shadowBlur=10;
+    ctx.fillStyle='#ff0';
+    ctx.beginPath();ctx.arc(cx,cy,c.r,0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.fillStyle='#fa0';
+    ctx.beginPath();ctx.arc(cx,cy,c.r-3,0,Math.PI*2);ctx.fill();
+    // $ sign
+    ctx.fillStyle='#ff0';
+    ctx.font='bold 10px monospace';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText('$',cx,cy+1);
+  }
+
+  // Enemies
+  for(let e of enemies){
+    if(!e.alive)continue;
+    let ex=e.x-camera.x;
+    ctx.shadowColor='#f00';ctx.shadowBlur=8;
+    // Body
+    ctx.fillStyle='#f00';
+    ctx.fillRect(ex+2,e.y+4,e.w-4,e.h-4);
+    ctx.shadowBlur=0;
+    ctx.fillStyle='#800';
+    ctx.fillRect(ex+4,e.y+6,e.w-8,e.h-8);
+    // Eyes
+    ctx.fillStyle='#fff';
+    ctx.fillRect(ex+4,e.y+8,5,5);
+    ctx.fillRect(ex+e.w-9,e.y+8,5,5);
+    ctx.fillStyle='#f00';
+    let eyeDir=e.vx>0?2:0;
+    ctx.fillRect(ex+4+eyeDir,e.y+10,2,2);
+    ctx.fillRect(ex+e.w-9+eyeDir,e.y+10,2,2);
+    // Spikes on top
+    ctx.fillStyle='#f00';
+    for(let sx=ex+2;sx<ex+e.w-2;sx+=6){
+      ctx.beginPath();ctx.moveTo(sx,e.y+4);ctx.lineTo(sx+3,e.y-2);ctx.lineTo(sx+6,e.y+4);ctx.fill();
+    }
+  }
+
+  // Player
+  let px=player.x-camera.x,py=player.y;
+  ctx.shadowColor='#0ff';ctx.shadowBlur=15;
+  // Body
+  ctx.fillStyle='#0ff';
+  ctx.fillRect(px+2,py+4,PLAYER_W-4,PLAYER_H-4);
+  ctx.shadowBlur=0;
+  ctx.fillStyle='#088';
+  ctx.fillRect(px+4,py+6,PLAYER_W-8,PLAYER_H-8);
+  // Visor / eyes
+  ctx.fillStyle='#fff';
+  let eyeX=player.facing>0?px+10:px+4;
+  ctx.fillRect(eyeX,py+10,8,4);
+  ctx.fillStyle='#0ff';
+  ctx.fillRect(eyeX+(player.facing>0?4:0),py+11,3,2);
+  // Legs animation
+  let legAnim=Math.abs(player.vx)>0.5?Math.sin(t*12)*3:0;
+  ctx.fillStyle='#0ff';
+  ctx.fillRect(px+4,py+PLAYER_H-2,5,2+legAnim);
+  ctx.fillRect(px+PLAYER_W-9,py+PLAYER_H-2,5,2-legAnim);
+
+  // Particles
+  drawParticles();
+}
+
+function drawHUD(){
+  ctx.fillStyle='#0ff';
+  ctx.font='16px monospace';
+  ctx.textAlign='left';ctx.textBaseline='top';
+  ctx.shadowColor='#0ff';ctx.shadowBlur=6;
+  ctx.fillText('SCORE: '+score,10,10);
+  ctx.fillText('HI: '+highScore,10,30);
+  // Lives
+  for(let i=0;i<lives;i++){
+    ctx.fillStyle='#0ff';
+    ctx.fillRect(W-30-i*22,12,16,16);
+    ctx.fillStyle='#088';
+    ctx.fillRect(W-28-i*22,14,12,12);
+  }
+  ctx.shadowBlur=0;
+}
+
+function drawTitle(){
+  drawParallax();
+
+  let t=performance.now()/1000;
+  // Title
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.shadowColor='#0ff';ctx.shadowBlur=20;
+  ctx.fillStyle='#0ff';
+  ctx.font='bold 52px monospace';
+  ctx.fillText('NEON RUNNER',W/2,H*0.28);
+  ctx.shadowBlur=10;
+  ctx.font='bold 54px monospace';
+  ctx.fillStyle='rgba(0,255,255,0.3)';
+  ctx.fillText('NEON RUNNER',W/2,H*0.28);
+  ctx.shadowBlur=0;
+
+  // Subtitle
+  ctx.fillStyle='#f0f';
+  ctx.font='14px monospace';
+  ctx.fillText('A RETRO PLATFORMER',W/2,H*0.38);
+
+  // Controls
+  ctx.fillStyle='#888';
+  ctx.font='13px monospace';
+  let cy=H*0.52;
+  ctx.fillStyle='#0ff';
+  ctx.fillText('[ CONTROLS ]',W/2,cy);
+  ctx.fillStyle='#aaa';
+  ctx.fillText('Arrow Keys : Move Left / Right',W/2,cy+24);
+  ctx.fillText('Space : Jump',W/2,cy+44);
+  ctx.fillText('Stomp enemies from above!',W/2,cy+64);
+
+  // High score
+  if(highScore>0){
+    ctx.fillStyle='#ff0';
+    ctx.font='14px monospace';
+    ctx.fillText('HIGH SCORE: '+highScore,W/2,H*0.78);
+  }
+
+  // Blink
+  let blink=Math.sin(t*3)>.0;
+  if(blink){
+    ctx.fillStyle='#0ff';
+    ctx.font='16px monospace';
+    ctx.fillText('PRESS ENTER TO START',W/2,H*0.88);
+  }
+}
+
+function drawGameOver(){
+  ctx.fillStyle='rgba(0,0,0,0.7)';
+  ctx.fillRect(0,0,W,H);
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.shadowColor='#f00';ctx.shadowBlur=20;
+  ctx.fillStyle='#f00';
+  ctx.font='bold 44px monospace';
+  ctx.fillText('GAME OVER',W/2,H*0.35);
+  ctx.shadowBlur=0;
+  ctx.fillStyle='#0ff';
+  ctx.font='18px monospace';
+  ctx.fillText('SCORE: '+score,W/2,H*0.48);
+  if(score>=highScore){
+    ctx.fillStyle='#ff0';
+    ctx.fillText('NEW HIGH SCORE!',W/2,H*0.56);
+  }
+  let t=performance.now()/1000;
+  if(Math.sin(t*3)>0){
+    ctx.fillStyle='#0ff';
+    ctx.font='16px monospace';
+    ctx.fillText('PRESS ENTER TO RETRY',W/2,H*0.72);
+  }
+}
+
+function drawScanlines(){
+  ctx.fillStyle='rgba(0,0,0,0.06)';
+  for(let y=0;y<H;y+=2){
+    ctx.fillRect(0,y,W,1);
+  }
+  // Vignette
+  let grad=ctx.createRadialGradient(W/2,H/2,W*0.3,W/2,H/2,W*0.75);
+  grad.addColorStop(0,'rgba(0,0,0,0)');
+  grad.addColorStop(1,'rgba(0,0,0,0.4)');
+  ctx.fillStyle=grad;
+  ctx.fillRect(0,0,W,H);
+}
+
+// Main loop
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>
