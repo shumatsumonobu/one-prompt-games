@@ -30,4 +30,4 @@ all game prompts follow these constraints:
 
 ## commit style
 
-- japanese commit messages
+- english commit messages, playful tone
