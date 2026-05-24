@@ -14,7 +14,8 @@ all game prompts follow these constraints:
 - no external dependencies
 - fixed canvas, centered on screen
 - score counter + lives system + high score saved to localStorage
-- title screen with game name, control instructions, and press Enter to start
+- PC: keyboard controls, mobile: touch buttons on canvas, responsive layout
+- title screen with game name, control instructions, and press Enter or tap to start
 - prompts are written in english
 
 ## workflow
