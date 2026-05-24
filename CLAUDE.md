@@ -23,11 +23,13 @@ all game prompts follow these constraints:
 1. create directory: `mkdir docs/<game-name>`
 2. feed one prompt to Claude Code in that directory
 3. do NOT edit the generated code
-4. capture GIF: `node scripts/capture.mjs docs/<game-name>`
-5. add entry to README.md gallery (HTML table grid) with GitHub Pages play link
-6. add card to docs/index.html
-7. regenerate OG image: `node scripts/og-image.mjs`
-8. commit + push
+4. add GA4 tag to the generated index.html (measurement ID: G-BSB5RE2TXH)
+5. capture GIF: `node scripts/capture.mjs docs/<game-name>`
+6. add entry to README.md gallery (HTML table grid) with GitHub Pages play link
+7. add card to docs/index.html
+8. update game count in docs/index.html meta tags (og:title, og:description, twitter:title, twitter:description, meta description)
+9. regenerate OG image: `node scripts/og-image.mjs`
+10. commit + push
 
 ## commit style
 
