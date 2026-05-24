@@ -139,6 +139,17 @@ that's it. the prompt is the only weapon you get.
 </tr>
 <tr>
 <td align="center" valign="top" width="33%">
+<h3>again</h3>
+<em>she stands on the edge. you talk. she falls. you come back. again.</em>
+<br><br>
+<a href="https://shumatsumonobu.github.io/one-prompt-games/again/"><img src="docs/again/preview.gif" alt="again" width="100%"></a>
+<br>
+<a href="https://shumatsumonobu.github.io/one-prompt-games/again/">▶ Play</a>
+<br><br>
+<strong>the prompt:</strong>
+<p>Build a single-file browser game (HTML/CSS/JS). A retro narrative game with muted purple-on-black aesthetic, CRT scanlines, and subtle screen glow. A girl stands on the edge of a rooftop at sunset. Pixel-art style drawn on canvas — she has long hair blowing in the wind, a school uniform, small frame, clearly feminine. The city skyline and setting sun behind her. The player chooses dialogue options to talk to her. Initial choices: "Why are you here?", "It's dangerous up here", "Do you want to talk?", "Stay silent". Each choice triggers her response as floating text — distant and detached. After the player has selected every available choice once, she steps off the edge. Her sprite falls downward slowly across the screen. No input possible. The player watches. After she disappears below the screen, silence for 2 seconds, then fade to black. The game loops. On loop 2, she says "you came back" and quotes one of your previous choices. New choices appear: "I've seen this before", "What happens next?". On loop 3, her sprite shifts slightly — she half-turns toward you. She says "it won't change anything". New choices: "Please step back", "I'm not leaving". On loop 4, new choices: "I understand you", "You're not alone", "I'll stay here forever". The player feels hope. But after the player has selected every available choice once, she falls again. Always. Final loop (loop 5): no dialogue choices. She fully turns around to face you. She says "thank you for coming back every time". She steps off. The player watches one last time. Display "loops: 5, words exchanged: Y". High score (most words exchanged) saved to localStorage. Each loop is a life — 5 lives total. Background music: a slow melancholic 8-bit melody throughout, shifting darker each loop. Wind ambient sound constant. Silence when she falls. PC controls: arrow keys to select dialogue choice, Enter to confirm. Mobile: tap directly on dialogue choices, responsive layout. Fixed 4:3 canvas, centered on screen. Title screen with game name "AGAIN", tagline "some things can't be changed", control instructions (PC: Arrow keys + Enter / Mobile: Tap choices), and press Enter or tap to start. No external dependencies.</p>
+</td>
+<td align="center" valign="top" width="33%">
 <h3>ash</h3>
 <em>flick the ash before it drops. wait too long and it lands on your pants.</em>
 <br><br>
