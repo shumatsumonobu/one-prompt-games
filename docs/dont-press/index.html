@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BSB5RE2TXH"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-BSB5RE2TXH');
+</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DON'T PRESS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Press Start 2P', monospace;
+}
+
+body {
+  background: #0a0a0a;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+#game-container {
+  width: 800px;
+  height: 600px;
+  background: #0a0a0a;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid #222;
+}
+
+#scanlines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15) 0px,
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+  z-index: 9998;
+}
+
+#crt-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  box-shadow: inset 0 0 80px rgba(0, 255, 0, 0.05);
+  pointer-events: none;
+  z-index: 9997;
+}
+
+#score-display {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  color: #555;
+  font-size: 10px;
+  z-index: 100;
+  text-align: right;
+  line-height: 1.8;
+  transition: color 0.3s;
+}
+
+#the-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ff4444, #cc0000, #880000);
+  border: 6px solid #660000;
+  color: #fff;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 14px;
+  cursor: pointer;
+  z-index: 500;
+  box-shadow: 0 8px 0 #440000, 0 12px 30px rgba(0,0,0,0.5), inset 0 -4px 8px rgba(0,0,0,0.3);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  line-height: 1.4;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.1s, box-shadow 0.1s;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#the-button:active {
+  transform: translate(-50%, -50%) translateY(4px);
+  box-shadow: 0 4px 0 #440000, 0 6px 15px rgba(0,0,0,0.5), inset 0 -2px 4px rgba(0,0,0,0.3);
+}
+
+.warning-text {
+  position: absolute;
+  color: #ff0000;
+  font-size: 11px;
+  z-index: 200;
+  pointer-events: none;
+  animation: fadeInShake 0.5s ease-out;
+  text-shadow: 0 0 10px rgba(255,0,0,0.5);
+}
+
+@keyframes fadeInShake {
+  0% { opacity: 0; transform: translateX(-10px); }
+  50% { transform: translateX(5px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+  25% { transform: translate(-50%, -50%) rotate(-3deg); }
+  75% { transform: translate(-50%, -50%) rotate(3deg); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translate(-50%, -50%); }
+  10% { transform: translate(calc(-50% + 8px), calc(-50% - 6px)); }
+  20% { transform: translate(calc(-50% - 6px), calc(-50% + 8px)); }
+  30% { transform: translate(calc(-50% + 10px), calc(-50% + 4px)); }
+  40% { transform: translate(calc(-50% - 4px), calc(-50% - 10px)); }
+  50% { transform: translate(calc(-50% + 6px), calc(-50% + 8px)); }
+  60% { transform: translate(calc(-50% - 8px), calc(-50% - 4px)); }
+  70% { transform: translate(calc(-50% + 4px), calc(-50% + 10px)); }
+  80% { transform: translate(calc(-50% - 10px), calc(-50% + 6px)); }
+  90% { transform: translate(calc(-50% + 8px), calc(-50% - 8px)); }
+}
+
+@keyframes screenShake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-5px, -3px); }
+  20% { transform: translate(3px, 5px); }
+  30% { transform: translate(-3px, -5px); }
+  40% { transform: translate(5px, 3px); }
+  50% { transform: translate(-5px, 5px); }
+  60% { transform: translate(3px, -3px); }
+  70% { transform: translate(-3px, 5px); }
+  80% { transform: translate(5px, -5px); }
+  90% { transform: translate(-3px, 3px); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes glitch {
+  0% { clip-path: inset(40% 0 61% 0); transform: translate(-2px, 2px); }
+  20% { clip-path: inset(92% 0 1% 0); transform: translate(1px, -1px); }
+  40% { clip-path: inset(43% 0 1% 0); transform: translate(-1px, 3px); }
+  60% { clip-path: inset(25% 0 58% 0); transform: translate(3px, 1px); }
+  80% { clip-path: inset(54% 0 7% 0); transform: translate(-3px, -2px); }
+  100% { clip-path: inset(58% 0 43% 0); transform: translate(2px, -3px); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes rainbow {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+@keyframes float {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+  100% { transform: translateY(600px); }
+}
+
+.fake-popup {
+  position: absolute;
+  background: #c0c0c0;
+  border: 3px outset #fff;
+  z-index: 800;
+  font-family: 'Press Start 2P', monospace;
+  pointer-events: none;
+}
+
+.fake-popup .popup-titlebar {
+  background: linear-gradient(90deg, #000080, #1084d0);
+  color: white;
+  padding: 4px 8px;
+  font-size: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fake-popup .popup-titlebar .close-btn {
+  background: #c0c0c0;
+  border: 2px outset #fff;
+  color: #000;
+  font-size: 8px;
+  padding: 1px 5px;
+  font-family: 'Press Start 2P', monospace;
+}
+
+.fake-popup .popup-body {
+  padding: 15px;
+  font-size: 8px;
+  color: #000;
+  text-align: center;
+  line-height: 1.8;
+}
+
+.fake-popup .popup-body .popup-btn {
+  margin-top: 10px;
+  background: #c0c0c0;
+  border: 2px outset #fff;
+  padding: 5px 15px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+}
+
+#bsod {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #0000aa;
+  color: #fff;
+  z-index: 9000;
+  padding: 40px;
+  font-size: 9px;
+  line-height: 2;
+}
+
+#final-screen {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  color: #fff;
+  z-index: 9500;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+}
+
+#final-screen .final-text {
+  font-size: 16px;
+  line-height: 2;
+  animation: pulse 2s infinite;
+}
+
+#final-screen .final-score {
+  margin-top: 30px;
+  font-size: 10px;
+  color: #666;
+}
+
+#final-screen .restart-hint {
+  margin-top: 40px;
+  font-size: 8px;
+  color: #333;
+  animation: pulse 3s infinite;
+}
+
+.clone-button {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ff4444, #cc0000, #880000);
+  border: 3px solid #660000;
+  color: #fff;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  cursor: pointer;
+  z-index: 400;
+  box-shadow: 0 4px 0 #440000;
+  pointer-events: none;
+  user-select: none;
+}
+
+.corrupt-text {
+  position: absolute;
+  color: #0f0;
+  font-size: 10px;
+  z-index: 200;
+  pointer-events: none;
+  opacity: 0.7;
+}
+</style>
+</head>
+<body>
+
+<div id="game-container">
+  <div id="scanlines"></div>
+  <div id="crt-glow"></div>
+
+  <div id="score-display">
+    PRESSES: <span id="press-count">0</span><br>
+    BEST: <span id="high-score">0</span>
+  </div>
+
+  <button id="the-button">DON'T<br>PRESS</button>
+
+  <div id="bsod"></div>
+
+  <div id="final-screen">
+    <div class="final-text">I told you<br>not to press it.</div>
+    <div class="final-score"></div>
+    <div class="restart-hint">click anywhere to restart</div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const container = document.getElementById('game-container');
+  const button = document.getElementById('the-button');
+  const pressCountEl = document.getElementById('press-count');
+  const highScoreEl = document.getElementById('high-score');
+  const scoreDisplay = document.getElementById('score-display');
+  const bsod = document.getElementById('bsod');
+  const finalScreen = document.getElementById('final-screen');
+
+  let pressCount = 0;
+  let highScore = parseInt(localStorage.getItem('dontpress-highscore')) || 0;
+  let isRunningAway = false;
+  let isGameOver = false;
+  let warningTexts = [];
+  let cloneButtons = [];
+  let corruptTexts = [];
+  let popups = [];
+  let chaosIntervals = [];
+
+  highScoreEl.textContent = highScore;
+
+  function resize() {
+    const sw = window.innerWidth, sh = window.innerHeight;
+    const scale = Math.min(sw / 800, sh / 600);
+    document.body.style.zoom = scale;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  function playSound(freq, duration, type, volume, detune) {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type || 'square';
+    osc.frequency.value = freq;
+    if (detune) osc.detune.value = detune;
+    gain.gain.value = volume || 0.1;
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+  }
+
+  function playBlip() {
+    playSound(440, 0.1, 'square', 0.08);
+  }
+
+  function playWarning() {
+    playSound(220, 0.2, 'sawtooth', 0.1);
+    setTimeout(() => playSound(180, 0.2, 'sawtooth', 0.1), 100);
+  }
+
+  function playGlitch() {
+    for (let i = 0; i < 3; i++) {
+      setTimeout(() => {
+        playSound(Math.random() * 1000 + 100, 0.05, 'square', 0.12, Math.random() * 200 - 100);
+      }, i * 30);
+    }
+  }
+
+  function playAlarm() {
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(800, t);
+    osc.frequency.setValueAtTime(600, t + 0.1);
+    osc.frequency.setValueAtTime(800, t + 0.2);
+    osc.frequency.setValueAtTime(600, t + 0.3);
+    gain.gain.value = 0.15;
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + 0.4);
+  }
+
+  function playChaos() {
+    for (let i = 0; i < 5; i++) {
+      setTimeout(() => {
+        playSound(Math.random() * 2000 + 50, 0.08, ['square','sawtooth','triangle'][Math.floor(Math.random()*3)], 0.1, Math.random() * 400 - 200);
+      }, i * 40);
+    }
+  }
+
+  function playDoom() {
+    const t = audioCtx.currentTime;
+    for (let i = 0; i < 8; i++) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.value = 100 - i * 10;
+      osc.detune.value = Math.random() * 100;
+      gain.gain.value = 0.06;
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 1);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(t + i * 0.05);
+      osc.stop(t + 1);
+    }
+  }
+
+  function playFinalSound() {
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(440, t);
+    osc.frequency.exponentialRampToValueAtTime(55, t + 2);
+    gain.gain.setValueAtTime(0.2, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 2);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t + 2);
+  }
+
+  function addWarning(text, x, y) {
+    const el = document.createElement('div');
+    el.className = 'warning-text';
+    el.textContent = text;
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    container.appendChild(el);
+    warningTexts.push(el);
+  }
+
+  function addPopup(title, message, x, y) {
+    const popup = document.createElement('div');
+    popup.className = 'fake-popup';
+    popup.style.left = x + 'px';
+    popup.style.top = y + 'px';
+    popup.style.width = '260px';
+    popup.innerHTML = `
+      <div class="popup-titlebar">
+        <span>${title}</span>
+        <span class="close-btn">X</span>
+      </div>
+      <div class="popup-body">
+        ${message}
+        <br><span class="popup-btn">OK</span>
+      </div>
+    `;
+    container.appendChild(popup);
+    popups.push(popup);
+  }
+
+  function addClone(x, y) {
+    const clone = document.createElement('div');
+    clone.className = 'clone-button';
+    clone.textContent = "DON'T";
+    clone.style.left = x + 'px';
+    clone.style.top = y + 'px';
+    container.appendChild(clone);
+    cloneButtons.push(clone);
+  }
+
+  function addCorruptText() {
+    const chars = '!@#$%^&*()_+{}|:<>?█▓▒░▀▄▌▐▲▼◄►☺☻♥♦♣♠•◘○';
+    let text = '';
+    for (let i = 0; i < 20 + Math.random() * 30; i++) {
+      text += chars[Math.floor(Math.random() * chars.length)];
+    }
+    const el = document.createElement('div');
+    el.className = 'corrupt-text';
+    el.textContent = text;
+    el.style.left = Math.random() * 700 + 'px';
+    el.style.top = Math.random() * 550 + 'px';
+    el.style.fontSize = (8 + Math.random() * 14) + 'px';
+    el.style.color = ['#0f0','#f00','#0ff','#ff0','#f0f'][Math.floor(Math.random()*5)];
+    container.appendChild(el);
+    corruptTexts.push(el);
+  }
+
+  function runAway() {
+    if (!isRunningAway) return;
+    const bw = 260, bh = 260;
+    const maxX = 800 - bw, maxY = 600 - bh;
+    const nx = Math.random() * maxX;
+    const ny = Math.random() * maxY;
+    button.style.transition = 'left 0.3s ease-out, top 0.3s ease-out';
+    button.style.left = nx + 'px';
+    button.style.top = ny + 'px';
+    button.style.transform = 'none';
+  }
+
+  function cleanup() {
+    warningTexts.forEach(el => el.remove());
+    cloneButtons.forEach(el => el.remove());
+    corruptTexts.forEach(el => el.remove());
+    popups.forEach(el => el.remove());
+    warningTexts = [];
+    cloneButtons = [];
+    corruptTexts = [];
+    popups = [];
+    chaosIntervals.forEach(id => clearInterval(id));
+    chaosIntervals = [];
+
+    container.style.transform = '';
+    container.style.filter = '';
+    container.style.animation = '';
+    container.style.background = '#0a0a0a';
+
+    button.style.transform = 'translate(-50%, -50%)';
+    button.style.left = '50%';
+    button.style.top = '50%';
+    button.style.transition = '';
+    button.style.animation = '';
+    button.style.filter = '';
+    button.style.width = '260px';
+    button.style.height = '260px';
+    button.style.fontSize = '14px';
+    button.style.background = 'radial-gradient(circle at 35% 35%, #ff4444, #cc0000, #880000)';
+    button.style.display = 'block';
+    button.textContent = '';
+    button.innerHTML = "DON'T<br>PRESS";
+
+    scoreDisplay.style.color = '#555';
+    scoreDisplay.style.animation = '';
+
+    bsod.style.display = 'none';
+    finalScreen.style.display = 'none';
+
+    isRunningAway = false;
+  }
+
+  function resetGame() {
+    isGameOver = false;
+    pressCount = 0;
+    pressCountEl.textContent = '0';
+    cleanup();
+  }
+
+  const stages = [
+    // Stage 1: Subtle wiggle
+    function() {
+      playBlip();
+      button.style.animation = 'wiggle 0.3s ease-in-out';
+      setTimeout(() => button.style.animation = '', 300);
+    },
+    // Stage 2: Background shifts slightly
+    function() {
+      playBlip();
+      container.style.background = '#0f0a0a';
+    },
+    // Stage 3: Button grows slightly
+    function() {
+      playBlip();
+      button.style.width = '280px';
+      button.style.height = '280px';
+    },
+    // Stage 4: First warning text
+    function() {
+      playWarning();
+      addWarning('stop.', 50, 100);
+      container.style.background = '#120a0a';
+    },
+    // Stage 5: More warnings, button text changes
+    function() {
+      playWarning();
+      addWarning("don't do it.", 500, 450);
+      addWarning('why?', 100, 350);
+      button.innerHTML = "STOP<br>PRESSING";
+    },
+    // Stage 6: Screen shakes briefly
+    function() {
+      playGlitch();
+      container.style.animation = 'screenShake 0.5s ease-in-out';
+      setTimeout(() => container.style.animation = '', 500);
+      container.style.background = '#1a0808';
+    },
+    // Stage 7: Button runs away from cursor
+    function() {
+      playGlitch();
+      isRunningAway = true;
+      button.style.left = button.offsetLeft + 'px';
+      button.style.top = button.offsetTop + 'px';
+      button.style.transform = 'none';
+      addWarning("YOU CAN'T CATCH ME", 250, 50);
+      runAway();
+    },
+    // Stage 8: Screen flips upside down
+    function() {
+      playAlarm();
+      container.style.transform = 'rotate(180deg)';
+      addWarning('EVERYTHING IS FINE', 300, 300);
+      button.innerHTML = "I SAID<br>DON'T";
+    },
+    // Stage 9: Colors go crazy, rainbow filter
+    function() {
+      playAlarm();
+      container.style.animation = 'rainbow 0.5s linear infinite';
+      container.style.transform = 'rotate(180deg)';
+      scoreDisplay.style.color = '#ff0';
+    },
+    // Stage 10: Fake error popup
+    function() {
+      playGlitch();
+      container.style.transform = '';
+      addPopup('⚠ Error', 'FATAL ERROR:<br>Too many presses detected.<br>Brain.exe has stopped.', 150, 50);
+      button.innerHTML = "OK<br>FINE";
+    },
+    // Stage 11: Button multiplies
+    function() {
+      playChaos();
+      for (let i = 0; i < 8; i++) {
+        addClone(Math.random() * 650, Math.random() * 450);
+      }
+      addWarning('WHICH ONE IS REAL?', 250, 20);
+    },
+    // Stage 12: Screen shakes violently + more popups
+    function() {
+      playChaos();
+      container.style.animation = 'screenShake 0.1s linear infinite';
+      addPopup('⛔ Warning', 'Your warranty<br>is now void.', 50, 300);
+      addPopup('💀 Alert', 'Point of no return<br>exceeded.', 400, 200);
+      button.style.background = 'radial-gradient(circle at 35% 35%, #ff00ff, #cc00cc, #880088)';
+      button.innerHTML = "PLEASE<br>NO MORE";
+    },
+    // Stage 13: Gravity — elements fall
+    function() {
+      playDoom();
+      container.style.animation = '';
+      warningTexts.forEach(el => {
+        el.style.animation = 'float 2s ease-in forwards';
+        el.style.animationDelay = Math.random() * 0.5 + 's';
+      });
+      cloneButtons.forEach(el => {
+        el.style.animation = 'float 2s ease-in forwards';
+        el.style.animationDelay = Math.random() * 0.5 + 's';
+      });
+      button.innerHTML = "OH<br>NO";
+      scoreDisplay.style.animation = 'pulse 0.3s infinite';
+    },
+    // Stage 14: Everything spins + corrupt text
+    function() {
+      playChaos();
+      container.style.animation = 'spin 2s linear infinite';
+      for (let i = 0; i < 15; i++) {
+        addCorruptText();
+      }
+      button.style.filter = 'hue-rotate(90deg)';
+      button.innerHTML = "H̸E̶L̴P̵";
+    },
+    // Stage 15: Text becomes fully corrupted, screen inverts
+    function() {
+      playDoom();
+      container.style.filter = 'invert(1)';
+      container.style.animation = 'spin 1s linear infinite';
+      for (let i = 0; i < 20; i++) {
+        addCorruptText();
+      }
+      button.innerHTML = "☠☠☠";
+      button.style.fontSize = '24px';
+    },
+    // Stage 16: Screen flickers + more chaos
+    function() {
+      playChaos();
+      const flickerId = setInterval(() => {
+        container.style.opacity = Math.random() > 0.5 ? '1' : '0.1';
+      }, 50);
+      chaosIntervals.push(flickerId);
+      setTimeout(() => {
+        clearInterval(flickerId);
+        container.style.opacity = '1';
+      }, 2000);
+      for (let i = 0; i < 12; i++) {
+        addClone(Math.random() * 650, Math.random() * 450);
+      }
+      button.innerHTML = "▓▒░█▓▒";
+    },
+    // Stage 17: Fake BSOD
+    function() {
+      playDoom();
+      container.style.animation = '';
+      container.style.filter = '';
+      container.style.transform = '';
+      bsod.style.display = 'block';
+      bsod.innerHTML = `
+        <br><br>
+        &nbsp;&nbsp;A problem has been detected and your game<br>
+        &nbsp;&nbsp;has been shut down to prevent damage.<br><br>
+        &nbsp;&nbsp;BUTTON_PRESS_OVERFLOW<br><br>
+        &nbsp;&nbsp;If this is the first time you've seen this<br>
+        &nbsp;&nbsp;error, STOP PRESSING THE BUTTON.<br><br>
+        &nbsp;&nbsp;Technical information:<br><br>
+        &nbsp;&nbsp;*** STOP: 0x000000F4 (0x00000003,<br>
+        &nbsp;&nbsp;0x${pressCount.toString(16).toUpperCase().padStart(8,'0')},<br>
+        &nbsp;&nbsp;0xDEADBEEF, 0xCAFEBABE)<br><br>
+        &nbsp;&nbsp;*** button.sys - Address 0xDONTPRESS<br><br><br>
+        &nbsp;&nbsp;Press any key to continue (don't)...
+      `;
+      button.style.display = 'none';
+
+      setTimeout(() => {
+        bsod.style.display = 'none';
+        button.style.display = 'block';
+        button.innerHTML = "...";
+        container.style.background = '#0a0a0a';
+      }, 2500);
+    },
+    // Stage 18: Total visual chaos — everything at once
+    function() {
+      playChaos();
+      playAlarm();
+      container.style.animation = 'spin 0.5s linear infinite';
+      container.style.filter = 'hue-rotate(180deg) saturate(3) contrast(2)';
+      for (let i = 0; i < 25; i++) {
+        addCorruptText();
+      }
+      for (let i = 0; i < 15; i++) {
+        addClone(Math.random() * 650, Math.random() * 450);
+      }
+      addPopup('☢ CRITICAL', 'SYSTEM MELTDOWN<br>IN PROGRESS', 200, 150);
+      addPopup('🔥 FATAL', 'EVERYTHING<br>IS ON FIRE', 100, 350);
+      button.innerHTML = "WHY";
+      button.style.fontSize = '28px';
+      button.style.background = 'radial-gradient(circle, #fff, #f0f, #f00)';
+      scoreDisplay.style.color = '#f00';
+    },
+    // Stage 19: Screen goes dark, button barely visible
+    function() {
+      playDoom();
+      container.style.animation = '';
+      container.style.filter = 'brightness(0.1)';
+      container.style.transform = '';
+      warningTexts.forEach(el => el.remove());
+      cloneButtons.forEach(el => el.remove());
+      corruptTexts.forEach(el => el.remove());
+      popups.forEach(el => el.remove());
+      warningTexts = [];
+      cloneButtons = [];
+      corruptTexts = [];
+      popups = [];
+      button.innerHTML = "last<br>chance";
+      button.style.fontSize = '12px';
+      button.style.background = 'radial-gradient(circle at 35% 35%, #330000, #1a0000, #0a0000)';
+      button.style.filter = '';
+
+      setTimeout(() => {
+        container.style.filter = 'brightness(0.3)';
+      }, 500);
+    },
+    // Stage 20: THE END
+    function() {
+      playFinalSound();
+      isGameOver = true;
+      button.style.display = 'none';
+      container.style.filter = '';
+      container.style.animation = '';
+      container.style.transform = '';
+      container.style.background = '#000';
+      bsod.style.display = 'none';
+
+      if (pressCount > highScore) {
+        highScore = pressCount;
+        localStorage.setItem('dontpress-highscore', highScore);
+        highScoreEl.textContent = highScore;
+      }
+
+      finalScreen.style.display = 'flex';
+      finalScreen.querySelector('.final-score').textContent =
+        `presses: ${pressCount}  |  best: ${highScore}`;
+    }
+  ];
+
+  button.addEventListener('click', function(e) {
+    e.preventDefault();
+    if (isGameOver) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    pressCount++;
+    pressCountEl.textContent = pressCount;
+
+    if (isRunningAway) {
+      runAway();
+    }
+
+    const stageIndex = pressCount - 1;
+    if (stageIndex < stages.length) {
+      stages[stageIndex]();
+    } else {
+      stages[stages.length - 1]();
+    }
+  });
+
+  button.addEventListener('mouseenter', function() {
+    if (isRunningAway && !isGameOver) {
+      runAway();
+    }
+  });
+
+  finalScreen.addEventListener('click', function() {
+    resetGame();
+  });
+
+  container.addEventListener('keydown', function(e) {
+    if (isGameOver && (e.key === 'Enter' || e.key === ' ')) {
+      resetGame();
+    }
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (isGameOver && (e.key === 'Enter' || e.key === ' ')) {
+      resetGame();
+    }
+    if (bsod.style.display === 'block') {
+      bsod.style.display = 'none';
+      button.style.display = 'block';
+      button.innerHTML = "...";
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
