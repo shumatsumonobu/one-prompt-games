@@ -172,8 +172,21 @@ that's it. the prompt is the only weapon you get.
 <p>create a single-file browser game (index.html) called "dont-press". no title screen — the game starts immediately. the screen has one big red button in the center that says "DON'T PRESS". nothing else. every time the player presses it, something unexpected and increasingly chaotic happens to the screen. start subtle — maybe the button wiggles, the background color shifts slightly. then escalate: text appears telling the player to stop, the button runs away from the cursor, the screen flips upside down, colors go crazy, fake error popups appear, the button multiplies, the page pretends to crash with a fake blue screen, gravity affects elements, everything spins, the text becomes corrupted. keep escalating for at least 15-20 stages of chaos. each press should feel like a surprise — the player never knows what's coming next. after the final stage, the screen goes black and just says "I told you not to press it." then resets. press count is the score — show it on screen. save highest press count to localStorage as high score. dark background (#0a0a0a), CRT scanlines overlay, retro pixel font aesthetic. canvas is NOT required — this game can use DOM elements and CSS for maximum visual chaos (transforms, animations, filters). 800x600 centered layout, responsive using document.body.style.zoom. Web Audio API for 8-bit sound effects that also escalate (subtle blip at first, glitchy noises later, alarm sounds near the end). PC: click the button. mobile: tap the button.</p>
 </td>
 </tr>
+<tr>
+<td align="center" valign="top" width="33%">
+<h3>bullet-hell</h3>
+<em>neon bullets fill the screen. dodge everything. defeat 3 bosses. don't blink.</em>
+<br><br>
+<a href="https://shumatsumonobu.github.io/one-prompt-games/bullet-hell/"><img src="docs/bullet-hell/preview.gif" alt="bullet-hell" width="100%"></a>
+<br>
+<a href="https://shumatsumonobu.github.io/one-prompt-games/bullet-hell/">▶ Play</a>
+<br><br>
+<strong>the prompt:</strong>
+<p>create a single-file browser game (index.html) called "bullet-hell". a vertical scrolling bullet-hell shooter with breathtaking neon bullet patterns. dark background (#0a0a0a) with CRT scanlines and screen glow. the player controls a small glowing cyan ship at the bottom of the screen, moving freely in all directions and auto-firing upward. 3 boss fights back to back, no regular enemies — just you vs the bosses. each boss has a unique geometric shape (triangle, hexagon, circle) and fills the screen with unique beautiful bullet patterns: spirals, rings, flower shapes, aimed streams, rotating wheels, expanding stars. bullets should be colorful (pink, orange, yellow, cyan, purple) with glow effects and trails so the screen looks like fireworks. each boss has 3 phases — pattern changes when health drops below 66% and 33%. boss health bar shown at top. the player has a small hitbox (4x4 pixels at the center of the ship sprite) for precise dodging. grazing bullets (passing very close without getting hit) gives bonus score and a satisfying sound. 3 lives, 3 bombs (press X or double-tap to clear all bullets on screen with a flash effect, gain 1 bomb per boss defeated), score counter, high score saved to localStorage. when hit: brief invulnerability with flashing effect. boss defeated: dramatic explosion with screen flash and particles. game over: show score and high score. beat all 3 bosses: victory screen with total score and clear time. canvas 800x600, responsive using document.body.style.zoom. PC: arrow keys or WASD to move, Z or Space to bomb, auto-fire always on. mobile: touch and drag anywhere on canvas to move ship (ship follows finger with offset so your finger doesn't cover it), auto-fire always on, double-tap to bomb. Web Audio API for 8-bit sound effects (player shot, enemy hit, boss explosion, player death, graze sound, bomb sound, victory jingle). title screen: "BULLET HELL" in large text with bullets animating in the background as decoration, "dodge everything" as subtitle, control instructions (PC: Arrow Keys/WASD to move, Z/Space to bomb / Mobile: drag to move, double-tap to bomb), and press Enter or tap to start.</p>
+</td>
+</tr>
 </table>
 
 ---
 
-built with [Claude Code](https://claude.ai/code) (Opus 4.6) and zero regrets by [@shumatsumonobu](https://github.com/shumatsumonobu) / [X](https://x.com/shumatsumonobu)
+built with [Claude Code](https://claude.ai/code) and zero regrets by [@shumatsumonobu](https://github.com/shumatsumonobu) / [X](https://x.com/shumatsumonobu)
